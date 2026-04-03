@@ -10,6 +10,14 @@
 #include <unistd.h>
 #endif
 
+#define RESET   "\033[0m"
+#define VERMELHO "\033[31m"
+#define VERDE   "\033[32m"
+#define AMARELO "\033[33m"
+#define AZUL    "\033[34m"
+#define CIANO   "\033[36m"
+#define BRANCO  "\033[37m"
+
 static void esperar(int ms) {
 #ifdef _WIN32
     Sleep(ms);
@@ -40,6 +48,32 @@ static int ehMovimentoValido(Labirinto *lab, int visitado[MAX][MAX], int lin, in
     }
 
     return 1;
+}
+
+static void imprimirCelulaColorida(char c) {
+    switch (c) {
+        case '#':
+            printf(BRANCO "%c" RESET, c);
+            break;
+        case 'T':
+            printf(AMARELO "%c" RESET, c);
+            break;
+        case 'A':
+            printf(VERMELHO "%c" RESET, c);
+            break;
+        case 'S':
+            printf(VERDE "%c" RESET, c);
+            break;
+        case 'P':
+            printf(AZUL "%c" RESET, c);
+            break;
+        case '.':
+            printf(CIANO "%c" RESET, c);
+            break;
+        default:
+            printf("%c", c);
+            break;
+    }
 }
 
 int carregarLabirinto(const char *nomeArquivo, Labirinto *lab) {
@@ -123,12 +157,13 @@ int carregarLabirinto(const char *nomeArquivo, Labirinto *lab) {
 void exibirLabirinto(Labirinto *lab, Posicao atual) {
     limparTela();
 
+    printf(CIANO "=========== LABIRINTO DE DADOS ===========\n" RESET);
     for (int i = 0; i < lab->linhas; i++) {
         for (int j = 0; j < lab->colunas; j++) {
             if (i == atual.linha && j == atual.coluna) {
-                printf("@");
+                printf(AZUL "@" RESET);
             } else {
-                printf("%c", lab->mapa[i][j]);
+                imprimirCelulaColorida(lab->mapa[i][j]);
             }
         }
         printf("\n");
@@ -142,6 +177,7 @@ int buscarSaida(Labirinto *lab, Mochila *mochila, Posicao caminho[], int *tamCam
     int visitado[MAX][MAX] = {0};
     Posicao pai[MAX][MAX];
     int encontrou = 0;
+    int passo = 0;
 
     for (int i = 0; i < MAX; i++) {
         for (int j = 0; j < MAX; j++) {
@@ -156,12 +192,18 @@ int buscarSaida(Labirinto *lab, Mochila *mochila, Posicao caminho[], int *tamCam
     while (!pilhaVazia(&pilha)) {
         Posicao atual;
         topoPilha(&pilha, &atual);
+        passo++;
 
         exibirLabirinto(lab, atual);
-        printf("\nMochila: ");
+        printf("\n" CIANO "--------------- STATUS ---------------\n" RESET);
+        printf("Passo atual: %d\n", passo);
+        printf("Posicao atual: (%d, %d)\n", atual.linha, atual.coluna);
+        printf("Mochila: ");
         imprimirMochila(mochila);
-        printf("\nTotal: %d\n", calcularTotalMochila(mochila));
-        esperar(250);
+        printf("\nTotal da mochila: %d\n", calcularTotalMochila(mochila));
+        printf(CIANO "--------------------------------------\n" RESET);
+
+        esperar(220);
 
         if (atual.linha == lab->saida.linha && atual.coluna == lab->saida.coluna) {
             encontrou = 1;
@@ -183,7 +225,6 @@ int buscarSaida(Labirinto *lab, Mochila *mochila, Posicao caminho[], int *tamCam
 
             if (ehMovimentoValido(lab, visitado, nl, nc)) {
                 visitado[nl][nc] = 1;
-
                 pai[nl][nc] = atual;
 
                 char celula = lab->mapa[nl][nc];
@@ -191,18 +232,37 @@ int buscarSaida(Labirinto *lab, Mochila *mochila, Posicao caminho[], int *tamCam
                 if (celula == 'T') {
                     int valor = rand() % 100 + 1;
                     if (inserirTesouroOrdenado(mochila, valor)) {
-                        printf("\nTesouro encontrado em (%d,%d)! Valor: %d\n", nl, nc, valor);
+                        exibirLabirinto(lab, atual);
+                        printf("\n" CIANO "--------------- EVENTO ----------------\n" RESET);
+                        printf(AMARELO "Tesouro encontrado!\n" RESET);
+                        printf("Posicao: (%d, %d)\n", nl, nc);
+                        printf("Valor sorteado: %d\n", valor);
+                        printf("Mochila agora: ");
+                        imprimirMochila(mochila);
+                        printf("\n" CIANO "---------------------------------------\n" RESET);
+                        esperar(700);
                     } else {
                         printf("\nErro de memoria ao guardar tesouro.\n");
+                        esperar(700);
                     }
                     lab->mapa[nl][nc] = ' ';
                 } else if (celula == 'A') {
                     int removido;
+                    exibirLabirinto(lab, atual);
+                    printf("\n" CIANO "--------------- EVENTO ----------------\n" RESET);
                     if (removerPrimeiroTesouro(mochila, &removido)) {
-                        printf("\nArmadilha em (%d,%d)! Tesouro perdido: %d\n", nl, nc, removido);
+                        printf(VERMELHO "Armadilha acionada!\n" RESET);
+                        printf("Posicao: (%d, %d)\n", nl, nc);
+                        printf("Tesouro perdido: %d\n", removido);
                     } else {
-                        printf("\nArmadilha em (%d,%d)! Mas a mochila estava vazia.\n", nl, nc);
+                        printf(VERMELHO "Armadilha acionada!\n" RESET);
+                        printf("Posicao: (%d, %d)\n", nl, nc);
+                        printf("A mochila estava vazia.\n");
                     }
+                    printf("Mochila agora: ");
+                    imprimirMochila(mochila);
+                    printf("\n" CIANO "---------------------------------------\n" RESET);
+                    esperar(700);
                     lab->mapa[nl][nc] = ' ';
                 }
 
@@ -218,6 +278,15 @@ int buscarSaida(Labirinto *lab, Mochila *mochila, Posicao caminho[], int *tamCam
         if (!moveu) {
             Posicao removida;
             desempilhar(&pilha, &removida);
+
+            if (!pilhaVazia(&pilha)) {
+                exibirLabirinto(lab, removida);
+                printf("\n" CIANO "--------------- EVENTO ----------------\n" RESET);
+                printf("Beco sem saida em (%d, %d).\n", removida.linha, removida.coluna);
+                printf("Realizando backtracking...\n");
+                printf(CIANO "---------------------------------------\n" RESET);
+                esperar(450);
+            }
         }
     }
 
@@ -285,4 +354,40 @@ int salvarSolucao(const char *nomeArquivo, Labirinto *lab, Posicao caminho[], in
 
     fclose(arq);
     return 1;
+}
+
+void exibirCaminhoFinal(Labirinto *lab, Posicao caminho[], int tamCaminho) {
+    char copia[MAX][MAX];
+
+    for (int i = 0; i < lab->linhas; i++) {
+        for (int j = 0; j < lab->colunas; j++) {
+            copia[i][j] = lab->original[i][j];
+        }
+    }
+
+    for (int i = 0; i < tamCaminho; i++) {
+        int l = caminho[i].linha;
+        int c = caminho[i].coluna;
+
+        if (copia[l][c] != 'P' && copia[l][c] != 'S') {
+            copia[l][c] = '.';
+        }
+    }
+
+    printf("\n" CIANO "=========== CAMINHO FINAL ENCONTRADO ===========\n" RESET);
+    for (int i = 0; i < lab->linhas; i++) {
+        for (int j = 0; j < lab->colunas; j++) {
+            imprimirCelulaColorida(copia[i][j]);
+        }
+        printf("\n");
+    }
+
+    printf("\nSequencia de posicoes do caminho:\n");
+    for (int i = 0; i < tamCaminho; i++) {
+        printf("(%d,%d)", caminho[i].linha, caminho[i].coluna);
+        if (i < tamCaminho - 1) {
+            printf(" -> ");
+        }
+    }
+    printf("\n");
 }

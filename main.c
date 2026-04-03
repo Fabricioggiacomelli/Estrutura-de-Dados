@@ -23,18 +23,24 @@ int main() {
 
     if (buscarSaida(&lab, &mochila, caminho, &tamCaminho)) {
         printf("\n\nSaida encontrada!\n");
+        printf("Quantidade de passos no caminho final: %d\n", tamCaminho);
         printf("Total de tesouros na mochila: %d\n", calcularTotalMochila(&mochila));
         printf("Mochila final: ");
         imprimirMochila(&mochila);
         printf("\n");
 
+        exibirCaminhoFinal(&lab, caminho, tamCaminho);
+
         if (salvarSolucao("saida.txt", &lab, caminho, tamCaminho)) {
-            printf("Solucao salva em saida.txt com sucesso.\n");
+            printf("\nSolucao salva em saida.txt com sucesso.\n");
         }
     } else {
         printf("\nNenhum caminho ate a saida foi encontrado.\n");
     }
 
     liberarMochila(&mochila);
+
+    printf("\nPressione Enter para encerrar...");
+    getchar();
     return 0;
 }
