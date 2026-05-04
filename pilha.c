@@ -1,3 +1,4 @@
+/* pilha.c - Implementacao da pilha dinamica de posicoes. */
 #include <stdio.h>
 #include <stdlib.h>
 #include "pilha.h"
@@ -16,6 +17,7 @@ int empilhar(Pilha *p, Posicao pos) {
         return 0;
     }
 
+    /* novo no aponta para o antigo topo; depois vira o novo topo */
     novo->pos = pos;
     novo->prox = p->topo;
     p->topo = novo;
@@ -34,6 +36,8 @@ int desempilhar(Pilha *p, Posicao *pos) {
     return 1;
 }
 
+/* Peek: consulta o topo sem remover — usado para processar a posicao atual
+ * sem perder a referencia ao caminho percorrido ate aqui. */
 int topoPilha(Pilha *p, Posicao *pos) {
     if (pilhaVazia(p)) {
         return 0;

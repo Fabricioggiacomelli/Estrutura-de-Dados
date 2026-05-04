@@ -1,3 +1,11 @@
+/* labirinto.c - Carregamento, exibicao e busca (DFS + backtracking) do labirinto.
+ *
+ * Algoritmo de busca (buscarSaida):
+ *   DFS iterativo com pilha explicita. A cada iteracao, o topo e inspecionado
+ *   (peek) sem remover. Se ha vizinho valido, ele e empilhado (avanco). Se nao
+ *   ha, o topo e desempilhado (backtracking). O array 'pai' registra, para cada
+ *   celula, qual celula a originou — usado ao final para reconstruir o caminho.
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,6 +26,7 @@
 #define CIANO   "\033[36m"
 #define BRANCO  "\033[37m"
 
+/* Pausa multiplataforma usada para animar a travessia no terminal. */
 static void esperar(int ms) {
 #ifdef _WIN32
     Sleep(ms);
@@ -76,6 +85,10 @@ static void imprimirCelulaColorida(char c) {
     }
 }
 
+/* Le o arquivo .txt: primeira linha contem "linhas colunas", as seguintes
+ * contem o mapa caractere a caractere. Localiza 'P' e 'S' durante a leitura.
+ * Armazena o mapa tanto em lab->mapa (usado na busca) quanto em lab->original
+ * (usado para gerar o arquivo de saida sem alteracoes da travessia). */
 int carregarLabirinto(const char *nomeArquivo, Labirinto *lab) {
     FILE *arq = fopen(nomeArquivo, "r");
     if (arq == NULL) {
@@ -170,6 +183,18 @@ void exibirLabirinto(Labirinto *lab, Posicao atual) {
     }
 }
 
+/* DFS iterativo com backtracking para encontrar a saida do labirinto.
+ *
+ * Estruturas principais:
+ *   pilha    - caminho atual em exploracao (peek = posicao corrente)
+ *   visitado - celulas ja colocadas na pilha (nao sao revisitadas)
+ *   pai      - para cada celula, qual celula a adicionou a pilha;
+ *              permite reconstruir o caminho de P ate S ao final
+ *
+ * Fluxo: peek no topo -> tenta mover para vizinho valido -> empilha.
+ *        Se nenhum vizinho valido, desempilha (backtracking).
+ *        Ao chegar em 'S', reconstroi o caminho via array pai (S->P)
+ *        e inverte para retornar na ordem correta (P->S). */
 int buscarSaida(Labirinto *lab, Mochila *mochila, Posicao caminho[], int *tamCaminho) {
     Pilha pilha;
     inicializarPilha(&pilha);
@@ -179,6 +204,7 @@ int buscarSaida(Labirinto *lab, Mochila *mochila, Posicao caminho[], int *tamCam
     int encontrou = 0;
     int passo = 0;
 
+    /* inicializa pai com (-1,-1) para identificar celulas sem predecessor */
     for (int i = 0; i < MAX; i++) {
         for (int j = 0; j < MAX; j++) {
             pai[i][j].linha = -1;
@@ -210,6 +236,7 @@ int buscarSaida(Labirinto *lab, Mochila *mochila, Posicao caminho[], int *tamCam
             break;
         }
 
+        /* ordem de preferencia: cima, direita, baixo, esquerda */
         int movimentos[4][2] = {
             {-1, 0},
             {0, 1},
@@ -230,6 +257,7 @@ int buscarSaida(Labirinto *lab, Mochila *mochila, Posicao caminho[], int *tamCam
                 char celula = lab->mapa[nl][nc];
 
                 if (celula == 'T') {
+                    /* valor aleatorio 1-100 sorteado no momento da coleta */
                     int valor = rand() % 100 + 1;
                     if (inserirTesouroOrdenado(mochila, valor)) {
                         exibirLabirinto(lab, atual);
@@ -296,6 +324,8 @@ int buscarSaida(Labirinto *lab, Mochila *mochila, Posicao caminho[], int *tamCam
         return 0;
     }
 
+    /* Reconstrucao do caminho: segue o array pai de S ate P em ordem inversa,
+     * depois inverte para retornar o caminho na ordem P->S. */
     Posicao atual = lab->saida;
     Posicao inverso[MAX * MAX];
     int tam = 0;

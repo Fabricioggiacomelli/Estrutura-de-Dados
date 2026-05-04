@@ -1,3 +1,10 @@
+/* main.c - Ponto de entrada do Labirinto de Dados (Projeto AC2 - FACENS).
+ *
+ * Fluxo:
+ *   1. Carrega o labirinto de "entrada.txt"
+ *   2. Executa DFS com backtracking, coletando tesouros e evitando armadilhas
+ *   3. Exibe o caminho final e salva em "saida.txt"
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -13,6 +20,7 @@ int main() {
     srand((unsigned int)time(NULL));
     inicializarMochila(&mochila);
 
+    /*mudar a entrada*/
     if (!carregarLabirinto("entrada.txt", &lab)) {
         return 1;
     }
